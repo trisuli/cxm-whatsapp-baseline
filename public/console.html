@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CXM Console</title>
+<style>
+:root{--bg:#e9efed;--surface:#fff;--surface-2:#f4f7f6;--ink:#12302a;--muted:#576d67;--line:#d3dedb;--accent:#0d7468;--accent-soft:#d8efeb;--accent-ink:#fff;
+  --chat:#e4ebe8;--in:#fff;--out:#d3f1df;--link:#0b6bb0;--ok:#067647;--ok-soft:#dcf3e6;--warn:#a14a06;--warn-soft:#fcecd9;--danger:#b42318;--danger-soft:#fde4e1;--muted-soft:#e6ebea;
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;font-size:14px;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0c1513;--surface:#14201e;--surface-2:#182624;--ink:#e2eeea;--muted:#94aaa4;--line:#263834;--accent:#36b5a5;--accent-soft:#163a35;--accent-ink:#06201c;
+  --chat:#0e1917;--in:#1c2a28;--out:#164a3b;--link:#6db8f0;--ok:#4ccb8a;--ok-soft:#123326;--warn:#f0a65a;--warn-soft:#3a2810;--danger:#f2867a;--danger-soft:#3f1714;--muted-soft:#22302d;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
+.wrap{max-width:1280px;margin:0 auto;padding:14px 16px 30px}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{font-size:19px;margin:0}.sub{color:var(--muted);font-size:12.5px}
+.pill{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--muted-soft);color:var(--muted)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--accent)}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.btn.danger{color:var(--danger)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.tabs{display:flex;gap:2px;padding:0 10px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{border:0;background:none;padding:11px 12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.pane{padding:14px 16px 18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 11px;font-size:12.5px}
+.chip[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 10px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}tbody tr:hover td{background:var(--surface-2)}tbody tr.sel td{background:var(--accent-soft)}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:nowrap}.small{display:block;color:var(--muted);font-size:12px}
+.st{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;background:var(--muted-soft);color:var(--muted)}
+.st.new{background:var(--accent-soft);color:var(--accent)}.st.awaiting_patient,.st.reschedule_requested{background:var(--warn-soft);color:var(--warn)}
+.st.confirmed,.st.arrived{background:var(--ok-soft);color:var(--ok)}.st.no_show{background:var(--danger-soft);color:var(--danger)}
+.late{color:var(--danger);font-weight:700}
+.detail{margin-top:14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;border:1px solid var(--line);border-radius:10px;padding:14px}
+@media (max-width:760px){.detail{grid-template-columns:minmax(0,1fr)}}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0}dt{color:var(--muted)}dd{margin:0}
+.actions{display:flex;flex-direction:column;gap:10px}.row{display:flex;flex-wrap:wrap;gap:6px}
+select,input[type=text],input[type=email],input[type=password]{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 10px;width:100%}
+.note{font-size:12.5px;color:var(--muted);background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.log{font-size:12px;color:var(--muted);border-top:1px dashed var(--line);margin-top:10px;padding-top:8px}
+.chats{display:grid;grid-template-columns:260px minmax(0,1fr);gap:12px}@media (max-width:760px){.chats{grid-template-columns:minmax(0,1fr)}}
+.clist{display:flex;flex-direction:column;gap:6px}
+.citem{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 10px}
+.citem[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}.citem.alert{border-left:4px solid var(--danger)}
+.thread{display:flex;flex-direction:column;gap:6px;background:var(--chat);border-radius:10px;padding:12px;min-height:280px;max-height:520px;overflow-y:auto}
+.msg{max-width:84%;align-self:flex-start;background:var(--in);border-radius:10px;padding:7px 9px;white-space:pre-wrap;word-wrap:break-word;font-size:13.5px;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.msg.me{align-self:flex-end;background:var(--out)}
+.msg .meta{font-size:10.5px;color:var(--muted);text-align:right;margin-top:2px}
+.msg .tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opts{display:flex;flex-direction:column;margin:6px -9px -7px;border-top:1px solid var(--line)}
+.opts button{border:0;border-top:1px solid var(--line);background:none;padding:7px;color:var(--link);font-weight:600;font-size:13px;text-align:center}
+.opts button:first-child{border-top:0}.opts .sec{font-size:10.5px;font-weight:700;color:var(--accent);text-transform:uppercase;padding:6px 10px 2px}
+.opts button.row{text-align:left;padding:6px 10px}
+.alertbar{background:var(--danger-soft);color:var(--danger);font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:8px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px}.kpi b{font-size:24px;display:block}
+.login{max-width:360px;margin:12vh auto;padding:22px;display:flex;flex-direction:column;gap:10px}
+.err{color:var(--danger);font-weight:600;font-size:13px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:9px;font-size:13px;max-width:calc(100% - 32px);z-index:9}
+.sim{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:16px}@media (max-width:860px){.sim{grid-template-columns:minmax(0,1fr)}}
+.compose{display:flex;gap:6px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <form class="card login" id="loginForm" hidden>
+    <h1>CXM console</h1><p class="sub">Sign in with your staff account.</p>
+    <label>Email<input type="email" id="email" autocomplete="username" required></label>
+    <label>Password<input type="password" id="password" autocomplete="current-password" required></label>
+    <p class="err" id="loginErr"></p>
+    <button class="btn primary" type="submit">Sign in</button>
+  </form>
+
+  <div id="app" hidden>
+    <header>
+      <div><h1>CXM console</h1><span class="sub" id="who"></span></div>
+      <div class="row"><span class="pill warn" id="dryPill" hidden>Dry run: nothing is sent to WhatsApp</span><button class="btn" id="logout">Sign out</button></div>
+    </header>
+    <div class="card">
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" data-tab="requests" aria-selected="true">Appointment requests</button>
+        <button role="tab" data-tab="chats" aria-selected="false">Live chats</button>
+        <button role="tab" data-tab="metrics" aria-selected="false">Metrics</button>
+        <button role="tab" data-tab="sim" aria-selected="false" id="simTab" hidden>Simulator</button>
+      </div>
+      <section class="pane" id="pane-requests"></section>
+      <section class="pane" id="pane-chats" hidden></section>
+      <section class="pane" id="pane-metrics" hidden></section>
+      <section class="pane" id="pane-sim" hidden></section>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (s) => esc(s).replace(/\*([^*\n]+)\*/g, '<b>$1</b>');
+const t12 = (t) => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'pm' : 'am'}`; };
+const day = (iso) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const time = (ts) => new Date(ts).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+const ago = (ts) => { const m = Math.round((Date.now() - new Date(ts)) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; };
+const WIN = { m: 'Morning', a: 'Afternoon', e: 'Evening' };
+const STATUS = { new: 'New', awaiting_patient: 'Awaiting patient', reschedule_requested: 'Reschedule requested', confirmed: 'Confirmed', arrived: 'Arrived', no_show: 'No-show', cancelled: 'Cancelled' };
+let ME = null, TAB = 'requests', FILTER = 'open', SEL = null, CHAT = null, SIM_WA = localStorage.getItem('simWa') || '919800000001';
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json' }, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  if (res.status === 401 && path !== '/api/login') { showLogin(); throw new Error('Signed out'); }
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return json;
+}
+let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => (t.hidden = true), 3500); }
+
+function showLogin() { $('#app').hidden = true; $('#loginForm').hidden = false; }
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); $('#loginErr').textContent = '';
+  try { await api('/api/login', { method: 'POST', body: { email: $('#email').value, password: $('#password').value } }); start(); }
+  catch (err) { $('#loginErr').textContent = err.message; }
+});
+$('#logout').onclick = async () => { await api('/api/logout', { method: 'POST' }); showLogin(); };
+
+async function start() {
+  ME = await api('/api/me');
+  $('#loginForm').hidden = true; $('#app').hidden = false;
+  $('#who').textContent = `${ME.name} · ${ME.role}`;
+  $('#dryPill').hidden = !ME.dryRun; $('#simTab').hidden = !ME.simulator;
+  render();
+}
+$('#tabs').onclick = (e) => {
+  const b = e.target.closest('[data-tab]'); if (!b) return;
+  TAB = b.dataset.tab;
+  document.querySelectorAll('[data-tab]').forEach((x) => x.setAttribute('aria-selected', x === b));
+  ['requests', 'chats', 'metrics', 'sim'].forEach((k) => ($('#pane-' + k).hidden = k !== TAB));
+  render();
+};
+function render() { ({ requests: renderRequests, chats: renderChats, metrics: renderMetrics, sim: renderSim })[TAB](); }
+setInterval(() => { if (ME && TAB !== 'sim' && !document.activeElement?.matches('select,input,textarea')) render(); }, 10000);
+
+// ------------------------------------------------------------- requests
+async function renderRequests() {
+  const rows = await api('/api/requests' + (FILTER === 'all' ? '' : `?status=${FILTER}`));
+  const f = [['open', 'Needs action'], ['confirmed', 'Confirmed'], ['cancelled', 'Cancelled'], ['all', 'All']];
+  let html = `<div class="chips">${f.map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${FILTER === k}">${l}</button>`).join('')}</div>`;
+  html += rows.length ? `<div class="tbl"><table><thead><tr><th>Ref</th><th>Patient</th><th>Doctor or service</th><th>Preferred</th><th>Source</th><th>Status</th><th>Waiting</th></tr></thead><tbody>${rows.map((r) => {
+    const open = ['new', 'reschedule_requested'].includes(r.status); const late = open && Date.now() - new Date(r.updated_at) > ME.slaMinutes * 60000;
+    return `<tr data-ref="${r.ref}" class="${SEL === r.ref ? 'sel' : ''}"><td class="mono">${r.ref}</td><td>${esc(r.patient_name)}<span class="small">${r.patient_age ?? ''} ${esc(r.patient_gender ?? '')}${r.for_other ? ' · booked by family' : ''}</span></td>
+      <td>${esc(r.service)}</td><td>${day(r.preferred_date)}<span class="small">${r.slot_time ? t12(r.slot_time) : WIN[r.time_window]}</span></td><td>${esc(r.source ?? '')}</td>
+      <td><span class="st ${r.status}">${STATUS[r.status]}</span></td><td class="${late ? 'late' : ''}">${open ? ago(r.updated_at) : '–'}</td></tr>`; }).join('')}</tbody></table></div>`
+    : `<p class="note">No requests here yet. ${ME.simulator ? 'Use the Simulator tab to book as a patient.' : ''}</p>`;
+  html += `<div id="detail"></div>`;
+  $('#pane-requests').innerHTML = html;
+  if (SEL) renderDetail(SEL);
+}
+$('#pane-requests').addEventListener('click', async (e) => {
+  const f = e.target.closest('[data-filter]'); if (f) { FILTER = f.dataset.filter; return renderRequests(); }
+  const tr = e.target.closest('tr[data-ref]'); if (tr) { SEL = tr.dataset.ref; document.querySelectorAll('tr.sel').forEach((x) => x.classList.remove('sel')); tr.classList.add('sel'); return renderDetail(SEL); }
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const body = { slot: $('#slot')?.value, kind: a.dataset.kind };
+  try { const r = await api(`/api/requests/${SEL}/${a.dataset.act}`, { method: 'POST', body }); toast(r.note || 'Done'); renderRequests(); }
+  catch (err) { toast(err.message); }
+});
+async function renderDetail(ref) {
+  const r = await api('/api/requests/' + ref);
+  const open = ['new', 'reschedule_requested', 'awaiting_patient'].includes(r.status);
+  const pref = new Set(r.slots?.preferred ?? []);
+  $('#detail').innerHTML = `<div class="detail"><div>
+    <b>${esc(r.patient_name)}</b> <span class="st ${r.status}">${STATUS[r.status]}</span>${r.patient_confirmed ? ' <span class="st confirmed">Patient confirmed</span>' : ''}
+    <dl><dt>Ref</dt><dd class="mono">${r.ref}</dd><dt>WhatsApp</dt><dd>+${esc(r.wa_id)}</dd><dt>Book with</dt><dd>${esc(r.service?.label)}</dd><dt>Location</dt><dd>${esc(r.service?.location?.name)}</dd>
+    <dt>Preferred</dt><dd>${day(r.preferred_date)}, ${WIN[r.time_window]}</dd>${r.slot_time ? `<dt>Booked</dt><dd><b>${t12(r.slot_time)}</b></dd>` : ''}${r.offered_slot ? `<dt>Offered</dt><dd>${t12(r.offered_slot)}</dd>` : ''}
+    <dt>Patient</dt><dd>${r.patient_age ?? ''} ${esc(r.patient_gender ?? '')}, ${esc(r.visit_type)}${r.uhid ? ' · UHID ' + esc(r.uhid) : ''}</dd>${r.reason ? `<dt>Reason</dt><dd>${esc(r.reason)}</dd>` : ''}<dt>Source</dt><dd>${esc(r.source ?? '')}</dd></dl>
+    <div class="log">${r.events.map((e) => `<div>${time(e.at)} · ${esc(e.actor)} · ${esc(e.action)}${e.details ? ' · ' + esc(e.details) : ''}</div>`).join('')}
+    ${r.reminders.map((m) => `<div>Reminder ${esc(m.kind)} · ${new Date(m.send_at).toLocaleString('en-IN')} · ${esc(m.status)}</div>`).join('')}</div>
+  </div><div class="actions">
+    ${open ? `<label>Slot booked in the HIS for ${day(r.preferred_date)}<select id="slot">${(r.slots?.all ?? []).map((t) => `<option value="${t}" ${t === (r.slots.preferred[0]) ? 'selected' : ''}>${t12(t)}${pref.has(t) ? '' : ' · outside preferred time'}</option>`).join('')}</select></label>
+      <div class="row"><button class="btn primary" data-act="confirm">Confirm and send on WhatsApp</button><button class="btn" data-act="offer">Offer this time instead</button></div>
+      <div class="row"><button class="btn danger" data-act="cancel">Cancel request</button></div>
+      <p class="note">Book the slot in the HIS first, then confirm here. CXM sends the confirmation, the preparation message and both reminders.</p>` : ''}
+    ${r.status === 'confirmed' ? `<div class="row"><button class="btn" data-act="remind" data-kind="reminder_24h">Send day-before reminder now</button><button class="btn" data-act="remind" data-kind="reminder_3h">Send 3-hour reminder now</button></div>
+      <div class="row"><button class="btn" data-act="arrived">Patient arrived</button><button class="btn danger" data-act="no-show">Mark no-show</button></div>` : ''}
+    ${['cancelled', 'arrived', 'no_show'].includes(r.status) ? '<p class="note">Nothing more to do on this request.</p>' : ''}
+  </div></div>`;
+}
+
+// ------------------------------------------------------------- chats
+async function renderChats() {
+  const chats = await api('/api/chats');
+
+  if (!chats.some((c) => c.id === CHAT)) {
+    CHAT = chats[0]?.id ?? null;
+  }
+
+  const STL = {
+    waiting: 'Waiting for reply',
+    replied: 'Replied',
+    resolved: 'Resolved'
+  };
+
+  const preview = (b) =>
+    String(b?.text || b?.replyTitle || b?.name || '')
+      .replace(/\*/g, '');
+
+  $('#pane-chats').innerHTML = `<div class="chats"><div class="clist">${chats.map((c) => `<button class="citem ${c.alert_type === 'emergency' && c.status !== 'resolved' ? 'alert' : ''}" data-chat="${c.id}" aria-pressed="${c.id === CHAT}">
+      <b>${esc(c.patient_name)}</b><span class="small">${esc(c.queue)} · ${STL[c.status] || c.status}</span><span class="small">${esc(preview(c.last_message)).slice(0, 60)}</span></button>`).join('') || '<p class="note">No live chats.</p>'}</div>
+    <div id="chatView"></div></div>`;
+
+  if (CHAT) await renderChat(CHAT);
+}
+async function renderChat(id) {
+  const c = await api('/api/chats/' + id);
+  $('#chatView').innerHTML = `${c.alert_type === 'emergency' && c.status !== 'resolved' ? `<div class="alertbar">Emergency: “${esc(c.alert_text)}”. Call the patient on +${esc(c.wa_id)} now.</div>` : ''}
+    <div class="row" style="justify-content:space-between;margin-bottom:8px"><div><b>${esc(c.patient_name)}</b> <span class="sub">· ${esc(c.queue)} · +${esc(c.wa_id)}</span></div>
+    ${c.status !== 'resolved' ? `<button class="btn" data-resolve="${c.id}">Resolve and hand back to assistant</button>` : '<span class="st">Resolved</span>'}</div>
+    <div class="thread" id="thread">${c.messages.map(bubble).join('')}</div>
+    ${c.status !== 'resolved' ? `<form class="compose" id="replyForm"><input type="text" id="replyText" placeholder="Reply on WhatsApp as ${esc(ME.name)}" required><button class="btn primary">Send</button></form>` : ''}`;
+  const th = $('#thread'); th.scrollTop = th.scrollHeight;
+}
+$('#pane-chats').addEventListener('click', async (e) => {
+  const c = e.target.closest('[data-chat]'); if (c) { CHAT = c.dataset.chat; return renderChats(); }
+  const r = e.target.closest('[data-resolve]'); if (r) { await api(`/api/chats/${r.dataset.resolve}/resolve`, { method: 'POST' }); toast('Chat resolved'); renderChats(); }
+});
+$('#pane-chats').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const r = await api(`/api/chats/${CHAT}/reply`, { method: 'POST', body: { text: $('#replyText').value } });
+  toast(r.note); renderChat(CHAT);
+});
+
+// ------------------------------------------------------------- shared bubble renderer
+function bubble(m, interactive) {
+  const b = m.body || {};
+  const meta = `<div class="meta">${m.template_name ? 'template · ' : ''}${time(m.created_at)}${m.direction === 'out' ? ' · ' + esc(m.status) : ''}</div>`;
+  if (m.direction === 'in') return `<div class="msg me">${esc(b.text ?? b.replyTitle ?? (b.kind === 'flow' ? 'Form submitted' : `[${b.kind}]`))}${meta}</div>`;
+  const opt = (id, title, row) => `<button class="${row ? 'row' : ''}" data-reply="${esc(id)}" data-title="${esc(title)}" ${interactive ? '' : 'disabled'}>${esc(title)}</button>`;
+  switch (b.kind) {
+    case 'text': return `<div class="msg">${fmt(b.text)}${meta}</div>`;
+    case 'buttons': return `<div class="msg">${b.header ? `<b>${esc(b.header)}</b>\n` : ''}${fmt(b.text)}${b.footer ? `\n<span class="small">${esc(b.footer)}</span>` : ''}${meta}<div class="opts">${b.buttons.map((x) => opt(x.id, x.title)).join('')}</div></div>`;
+    case 'list': return `<div class="msg">${fmt(b.text)}${meta}<div class="opts">${b.sections.map((s) => `<div class="sec">${esc(s.title)}</div>${s.rows.map((r) => opt(r.id, r.title, true)).join('')}`).join('')}</div></div>`;
+    case 'location': return `<div class="msg">📍 <b>${esc(b.name)}</b>\n${esc(b.address)}${meta}</div>`;
+    case 'flow': return `<div class="msg">${fmt(b.text)}${meta}<div class="opts"><button disabled>${esc(b.cta)} (WhatsApp Flow)</button></div></div>`;
+    case 'template': return `<div class="msg"><span class="tag">Template ${esc(b.name)}</span>\n${esc(b.bodyParams.join(' · '))}${meta}<div class="opts">${(b.buttonPayloads || []).map((p) => opt(p, p)).join('')}</div></div>`;
+    default: return '';
+  }
+}
+
+// ------------------------------------------------------------- metrics
+async function renderMetrics() {
+  const m = await api('/api/metrics'); const t = m.totals;
+  const pct = (a, b) => (Number(b) ? Math.round((Number(a) / Number(b)) * 100) + '%' : '–');
+  $('#pane-metrics').innerHTML = `<p class="sub">Last ${m.days} days</p><div class="kpis">
+    <div class="kpi"><b>${t.conversations}</b>New conversations</div><div class="kpi"><b>${t.requests}</b>Appointment requests</div>
+    <div class="kpi"><b>${pct(t.confirmed, t.requests)}</b>Requests confirmed</div><div class="kpi"><b>${t.median_confirm_minutes ? Math.round(t.median_confirm_minutes) + ' min' : '–'}</b>Median time to confirm</div>
+    <div class="kpi"><b>${pct(t.no_show, Number(t.no_show) + Number(t.arrived))}</b>No-show rate</div><div class="kpi"><b>${t.handoffs}</b>Hand-offs to staff</div></div>
+    <div class="chats"><div><b>Where chats start</b><div class="tbl" style="margin-top:6px"><table><tbody style="cursor:default">${m.sources.map((s) => `<tr><td>${esc(s.source)}</td><td style="text-align:right">${s.n}</td></tr>`).join('') || '<tr><td>No data yet</td></tr>'}</tbody></table></div></div>
+    <div><b>Questions without an approved answer</b><div class="tbl" style="margin-top:6px"><table><tbody style="cursor:default">${m.unanswered.map((u) => `<tr><td>${esc(u.text)}</td><td style="text-align:right">${u.n}</td></tr>`).join('') || '<tr><td>None</td></tr>'}</tbody></table></div></div></div>`;
+}
+
+// ------------------------------------------------------------- simulator (DEV_SIMULATOR only)
+async function renderSim() {
+  if (!$('#simThread')) {
+    $('#pane-sim').innerHTML = `<div class="sim"><div>
+      <div class="row" style="margin-bottom:8px"><label style="flex:1">Patient WhatsApp number<input type="text" id="simWa" value="${esc(SIM_WA)}"></label></div>
+      <div class="row" style="margin-bottom:8px"><button class="btn" id="simReset">Start over as this patient</button><button class="btn" id="simRem">Send due reminders now</button></div>
+      <div class="thread" id="simThread"></div>
+      <form class="compose" id="simForm"><input type="text" id="simText" placeholder="Type as the patient, e.g. hi, knee pain, chest pain" autocomplete="off"><button class="btn primary">Send</button></form></div>
+      <div class="note">This simulator feeds the same code path as the real WhatsApp webhook. Messages appear here instead of on a phone because the server runs in dry-run mode.
+      Try: <b>Hi, I’d like to book with Dr. Anil Rao (ref: WEB-D1)</b>, <b>knee pain</b>, <b>do you accept star health</b>, <b>which tablet for fever</b>, <b>chest pain</b>.
+      After you send a booking request, open Appointment requests to confirm it, then come back here to see what the patient receives.</div></div>`;
+    $('#simWa').onchange = (e) => { SIM_WA = e.target.value.trim(); localStorage.setItem('simWa', SIM_WA); loadSim(); };
+    $('#simForm').onsubmit = async (e) => { e.preventDefault(); const t = $('#simText').value; if (!t.trim()) return; $('#simText').value = ''; await api('/dev/inbound', { method: 'POST', body: { wa_id: SIM_WA, text: t } }); loadSim(); };
+    $('#simReset').onclick = async () => { await api('/dev/reset-patient', { method: 'POST', body: { wa_id: SIM_WA } }); loadSim(); };
+    $('#simRem').onclick = async () => { const r = await api('/dev/run-reminders', { method: 'POST' }); toast(`${r.sent} reminder(s) sent`); loadSim(); };
+    $('#simThread').onclick = async (e) => {
+      const b = e.target.closest('[data-reply]'); if (!b || b.disabled) return;
+      await api('/dev/inbound', { method: 'POST', body: { wa_id: SIM_WA, reply_id: b.dataset.reply, reply_title: b.dataset.title } }); loadSim();
+    };
+  }
+  loadSim();
+}
+async function loadSim() {
+  const msgs = await api('/dev/messages?wa_id=' + encodeURIComponent(SIM_WA));
+  const th = $('#simThread'); th.innerHTML = msgs.map((m) => bubble(m, true)).join('') || '<p class="sub">No messages yet. Type “hi”.</p>'; th.scrollTop = th.scrollHeight;
+}
+setInterval(() => { if (TAB === 'sim' && $('#simThread')) loadSim(); }, 3000);
+
+api('/api/me').then(start).catch(() => showLogin());
+</script>
+</body>
+</html>

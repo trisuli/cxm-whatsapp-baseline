@@ -1,0 +1,37 @@
+{
+  "name": "cxm-whatsapp-baseline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CXM WhatsApp Concierge: Discover and Access (L0) for hospitals on the WhatsApp Cloud API",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc -p tsconfig.json",
+    "migrate": "tsx scripts/migrate.ts",
+    "seed": "tsx scripts/seed.ts",
+    "chat": "tsx scripts/chat.ts",
+    "add-staff": "tsx scripts/add-staff.ts",
+    "templates:submit": "tsx scripts/submit-templates.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test --test-concurrency=1 test/*.test.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.3",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^8.3.0",
+    "dotenv": "^16.6.1",
+    "fastify": "^5.12.5",
+    "pg": "^8.23.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

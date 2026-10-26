@@ -1,0 +1,58 @@
+{
+  "version": "7.0",
+  "screens": [
+    {
+      "id": "BOOKING",
+      "title": "Book appointment",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "service_label": { "type": "string", "__example__": "Dr. Anil Rao, Orthopaedics" },
+        "dates": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [{ "id": "2026-10-14", "title": "Wed 14 Oct" }, { "id": "2026-10-16", "title": "Fri 16 Oct" }]
+        },
+        "windows": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "id": { "type": "string" }, "title": { "type": "string" } } },
+          "__example__": [{ "id": "m", "title": "Morning (9 am–12 pm)" }]
+        },
+        "default_name": { "type": "string", "__example__": "Ravi Kumar" }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "booking",
+            "children": [
+              { "type": "TextSubheading", "text": "${data.service_label}" },
+              { "type": "Dropdown", "name": "date", "label": "Preferred date", "required": true, "data-source": "${data.dates}" },
+              { "type": "RadioButtonsGroup", "name": "window", "label": "Preferred time", "required": true, "data-source": "${data.windows}" },
+              { "type": "RadioButtonsGroup", "name": "for_other", "label": "Who is it for?", "required": true,
+                "data-source": [{ "id": "me", "title": "Myself" }, { "id": "other", "title": "Someone else" }] },
+              { "type": "TextInput", "name": "name", "label": "Patient's full name", "required": true, "input-type": "text", "init-value": "${data.default_name}" },
+              { "type": "TextInput", "name": "age", "label": "Age", "required": true, "input-type": "number" },
+              { "type": "RadioButtonsGroup", "name": "gender", "label": "Gender", "required": true,
+                "data-source": [{ "id": "F", "title": "Female" }, { "id": "M", "title": "Male" }, { "id": "O", "title": "Other" }] },
+              { "type": "TextArea", "name": "reason", "label": "Reason for visit (optional)", "required": false },
+              { "type": "TextBody", "text": "This is a request. We confirm the exact time on WhatsApp. Nothing to pay now." },
+              {
+                "type": "Footer",
+                "label": "Send request",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "date": "${form.date}", "window": "${form.window}", "for_other": "${form.for_other}",
+                    "name": "${form.name}", "age": "${form.age}", "gender": "${form.gender}", "reason": "${form.reason}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
