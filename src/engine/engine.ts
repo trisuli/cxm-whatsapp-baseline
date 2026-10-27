@@ -41,7 +41,23 @@ export async function handleInbound(ev: Inbound): Promise<OutMsg[]> {
   await turn.run(ev);
   conv.context = turn.ctx;
   await saveConversation(conv);
-  for (const m of turn.out) await sendMessage(patient.wa_id, conv.id, m);
+  for (const m of turn.out) {
+  try {
+    await sendMessage(patient.wa_id, conv.id, m);
+  } catch (err) {
+    console.error('CXM outgoing message failed:', {
+      kind: m.kind,
+      message: err instanceof Error ? err.message : String(err),
+      listSections: m.kind === 'list'
+        ? m.sections.map((s) => ({
+            title: s.title,
+            rowCount: s.rows.length,
+          }))
+        : undefined,
+    });
+    throw err;
+  }
+}
   return turn.out;
 }
 
@@ -354,9 +370,27 @@ if (this.conv.mode === 'human') {
   showSpecialty(specId: string, intro?: string) {
     const sp = this.c.specialties.find((s) => s.id === specId);
     if (!sp) return this.say(this.specialtyList());
+
     const docs = this.c.doctors.filter((d) => d.specialty_id === specId);
-    this.say(text(intro ?? `Here are our *${sp.name}* doctors:`), ...docs.map((d) => this.doctorCard(d.id)),
-      buttons('Not sure who to see? Our team can help you choose.', [{ id: 'human', title: 'Help me choose' }, { id: 'menu', title: 'Main menu' }]));
+
+    if (docs.length === 0) {
+      return this.say(
+        text(`I couldn't find any listed doctors for ${sp.name}. Please choose another speciality or contact our team.`),
+        buttons('How would you like to continue?', [
+          { id: 'fspec', title: 'Other specialities' },
+          { id: 'human', title: 'Talk to our team' },
+        ])
+      );
+    }
+
+    this.say(
+      text(intro ?? `Here are our *${sp.name}* doctors:`),
+      ...docs.map((d) => this.doctorCard(d.id)),
+      buttons('Not sure who to see? Our team can help you choose.', [
+        { id: 'human', title: 'Help me choose' },
+        { id: 'menu', title: 'Main menu' },
+      ])
+    );
   }
 
   async bookingStart(svcId: string): Promise<OutMsg[]> {
