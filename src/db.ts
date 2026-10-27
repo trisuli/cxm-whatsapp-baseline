@@ -6,7 +6,10 @@ import { config } from './config.js';
 // Return DATE columns as 'YYYY-MM-DD' strings, not JS Dates shifted by the server timezone.
 pg.types.setTypeParser(1082, (v) => v);
 
-export const pool = new pg.Pool({ connectionString: config.DATABASE_URL });
+export const pool = new pg.Pool({
+  connectionString: config.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
 export async function q<T = any>(text: string, params: unknown[] = []): Promise<T[]> {
   const res = await pool.query(text, params);

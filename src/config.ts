@@ -7,7 +7,7 @@ const schema = z.object({
   PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().min(1),
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
-
+ ANTHROPIC_API_KEY: z.string().default(''),
   WA_PHONE_NUMBER_ID: z.string().default(''),
   WA_BUSINESS_ACCOUNT_ID: z.string().default(''),
   WA_ACCESS_TOKEN: z.string().default(''),

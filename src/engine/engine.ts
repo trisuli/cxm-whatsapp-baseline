@@ -14,7 +14,7 @@ import { buttons, list, text, type OutMsg } from '../whatsapp/messages.js';
 import type { Inbound } from '../whatsapp/webhook.js';
 import { content, describeWindows, matchKeywords, rupee, service, serviceIdOf, type Content, type Service } from './content.js';
 import { EMERGENCY, GREETING, MEDICAL_ADVICE, MY_APPOINTMENTS, SOURCE_TAG, START, STOP, WANTS_BOOKING, WANTS_HUMAN } from './intents.js';
-
+import { askClaude } from './claude.js';
 /** What the bot is waiting for, kept in conversations.context between messages. */
 type Draft = {
   svc: string; date?: string; win?: string; forOther?: boolean;
@@ -182,9 +182,31 @@ if (this.conv.mode === 'human') {
     if (WANTS_BOOKING.test(clean)) return this.route('book');
     if (WANTS_HUMAN.test(clean)) return this.route('human');
 
-    await q('insert into unanswered_questions (conversation_id, text) values ($1, $2)', [this.conv.id, raw.slice(0, 500)]);
-    this.say(buttons('I don’t have an approved answer for that yet, so I won’t guess. I can connect you to our team, who will reply here.',
-      [{ id: 'human', title: 'Talk to our team' }, { id: 'menu', title: 'Main menu' }], { footer: 'Logged so our team can add an answer' }));
+    await q(
+  'insert into unanswered_questions (conversation_id, text) values ($1, $2)',
+  [this.conv.id, raw.slice(0, 500)]
+);
+
+const aiReply = await askClaude(raw, this.c);
+
+if (aiReply) {
+  return this.say(
+    buttons(aiReply, [
+      { id: 'book', title: 'Book appointment' },
+      { id: 'menu', title: 'Main menu' },
+    ])
+  );
+}
+
+return this.say(
+  buttons(
+    'I couldn’t generate a response just now. Please try again, or contact our team for help.',
+    [
+      { id: 'human', title: 'Talk to our team' },
+      { id: 'menu', title: 'Main menu' },
+    ]
+  )
+);
   }
 
   // ---------------------------------------------------------------- button / list taps
