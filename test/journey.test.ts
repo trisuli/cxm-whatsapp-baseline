@@ -90,7 +90,13 @@ test('outside the 24-hour window, staff confirmation goes out as a template', as
   await tap(waId, 'bwho:other');
   await say(waId, 'Meena Sharma'); await say(waId, '54'); await tap(waId, 'bg:F'); await tap(waId, 'brs');
   const ref = allText(await tap(waId, 'bok')).match(/SNR-\d+/)![0];
-  await q(`update conversations set last_inbound_at = now() - interval '25 hours' where patient_id = (select id from patients where wa_id = $1)`, [waId]);
+ await q(
+  `update conversations
+   set last_inbound_at = now() - interval '25 hours'
+   where patient_id = (select id from patients where wa_id = $1)
+   returning id, last_inbound_at`,
+  [waId]
+);
   const since = new Date();
   const res = await confirm(ref, '09:30', 'Priya');
   assert.equal(res.delivery, 'template');

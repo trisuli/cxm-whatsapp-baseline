@@ -284,6 +284,7 @@ async function renderSim() {
 }
 async function loadSim() {
   const msgs = await api('/dev/messages?wa_id=' + encodeURIComponent(SIM_WA));
+    console.log('CXM simulator messages:', msgs);
   const th = $('#simThread'); th.innerHTML = msgs.map((m) => bubble(m, true)).join('') || '<p class="sub">No messages yet. Type “hi”.</p>'; th.scrollTop = th.scrollHeight;
 }
 setInterval(() => { if (TAB === 'sim' && $('#simThread')) loadSim(); }, 3000);

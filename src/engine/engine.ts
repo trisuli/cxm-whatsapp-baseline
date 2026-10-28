@@ -13,7 +13,18 @@ import { markRead, sendMessage } from '../whatsapp/client.js';
 import { buttons, list, text, type OutMsg } from '../whatsapp/messages.js';
 import type { Inbound } from '../whatsapp/webhook.js';
 import { content, describeWindows, matchKeywords, rupee, service, serviceIdOf, type Content, type Service } from './content.js';
-import { EMERGENCY, GREETING, MEDICAL_ADVICE, MY_APPOINTMENTS, SOURCE_TAG, START, STOP, WANTS_BOOKING, WANTS_HUMAN } from './intents.js';
+import {
+  EMERGENCY,
+  GENERAL_HEALTH_INFO,
+  GREETING,
+  MEDICAL_ADVICE,
+  MY_APPOINTMENTS,
+  SOURCE_TAG,
+  START,
+  STOP,
+  WANTS_BOOKING,
+  WANTS_HUMAN,
+} from './intents.js';
 import { askClaude } from './claude.js';
 /** What the bot is waiting for, kept in conversations.context between messages. */
 type Draft = {
@@ -171,7 +182,66 @@ if (this.conv.mode === 'human') {
 
     const faq = this.c.faqs.find((f) => matchKeywords(clean, f.keywords));
     if (faq) return this.say(buttons(faq.answer, [{ id: 'book', title: 'Book appointment' }, { id: 'menu', title: 'Main menu' }]));
-    if (/\b(where|address|location|direction|directions|how to reach)\b/.test(clean)) return this.route('loc');
+    // Redirect unrelated ticket and reservation requests before location matching.
+if (/\b(movie|movies|cinema|film|films|tv|television|concert|flight|flights|train tickets|hotel booking|event tickets)\b/i.test(clean)) {
+  return this.say(
+    buttons(
+      'I can help with hospital services, finding doctors, appointments, and general health information. What would you like help with?',
+      [
+        { id: 'menu', title: 'Main menu' },
+        { id: 'human', title: 'Talk to our team' },
+      ]
+    )
+  );
+}
+
+if (/\b(where|address|location|direction|directions|how to reach)\b/.test(clean)) {
+  return this.route('loc');
+}
+
+// Do not generate unapproved hospital-specific surgery pricing.
+if (
+  /\b(robotic surgery|surgery|surgical)\b/i.test(clean) &&
+  /\b(cost|price|pricing|fee|fees|charges)\b/i.test(clean)
+) {
+  return this.say(
+    buttons(
+      "I don't have an approved answer for this pricing question. Please contact our hospital team for accurate information.",
+      [
+        { id: 'human', title: 'Talk to our team' },
+        { id: 'menu', title: 'Main menu' },
+      ]
+    )
+  );
+}
+
+    // Answer general educational questions with Claude before matching specialties.
+    if (GENERAL_HEALTH_INFO.test(clean)) {
+      const aiReply = await askClaude(raw, this.c);
+
+      if (aiReply) {
+        const shortReply = aiReply.length > 850
+  ? aiReply.slice(0, 847).trimEnd().replace(/\s+\S*$/, '') + '...'
+  : aiReply;
+
+        return this.say(
+          buttons(shortReply, [
+            { id: 'book', title: 'Book appointment' },
+            { id: 'menu', title: 'Main menu' },
+          ])
+        );
+      }
+
+      return this.say(
+        buttons(
+          'I couldn’t answer that question just now. Please try again or contact our team for help.',
+          [
+            { id: 'human', title: 'Talk to our team' },
+            { id: 'menu', title: 'Main menu' },
+          ]
+        )
+      );
+    }
 
     const spec = this.c.specialties.find((s) => matchKeywords(clean, s.keywords))
       ?? this.c.specialties.find((s) => matchKeywords(clean, `${s.name.split(' ')[0].toLowerCase().slice(0, 6)}*`));
@@ -179,7 +249,20 @@ if (this.conv.mode === 'human') {
       const viaSymptom = !!matchKeywords(clean, spec.keywords);
       return this.showSpecialty(spec.id, viaSymptom ? `For this, a *${spec.name}* specialist is usually the right first visit. This is a suggestion, not a diagnosis.` : undefined);
     }
-    if (WANTS_BOOKING.test(clean)) return this.route('book');
+    // Redirect unrelated ticket and reservation requests to hospital services.
+if (/\b(movie|movies|cinema|film|films|tv|television|concert|flight|flights|train tickets|hotel booking|event tickets)\b/i.test(clean)) {
+  return this.say(
+    buttons(
+      'I can help with hospital services, finding doctors, appointments, and general health information. What would you like help with?',
+      [
+        { id: 'menu', title: 'Main menu' },
+        { id: 'human', title: 'Talk to our team' },
+      ]
+    )
+  );
+}
+
+if (WANTS_BOOKING.test(clean)) return this.route('book');
     if (WANTS_HUMAN.test(clean)) return this.route('human');
 
     await q(
@@ -187,11 +270,29 @@ if (this.conv.mode === 'human') {
   [this.conv.id, raw.slice(0, 500)]
 );
 
+const isHospitalRelated =
+  /\b(health|medical|symptom|pain|doctor|hospital|clinic|appointment|book|speciality|specialty|treatment|medicine|medication|disease|illness|fever|cough|diabetes|blood pressure|cancer|arthritis|insurance|cashless|report|test|checkup|emergency|ambulance|robotic surgery|surgery|surgical|cost|price|fee|charges|package|procedure)\b/i.test(raw);
+if (!isHospitalRelated) {
+  return this.say(
+    buttons(
+      'I can help with hospital services, finding doctors, appointments, and general health information. What would you like help with?',
+      [
+        { id: 'menu', title: 'Main menu' },
+        { id: 'human', title: 'Talk to our team' },
+      ]
+    )
+  );
+}
+
 const aiReply = await askClaude(raw, this.c);
 
 if (aiReply) {
+  const shortReply = aiReply.length > 850
+    ? aiReply.slice(0, 847).trimEnd().replace(/\s+\S*$/, '') + '...'
+    : aiReply;
+
   return this.say(
-    buttons(aiReply, [
+    buttons(shortReply, [
       { id: 'book', title: 'Book appointment' },
       { id: 'menu', title: 'Main menu' },
     ])
@@ -200,7 +301,7 @@ if (aiReply) {
 
 return this.say(
   buttons(
-    'I couldn’t generate a response just now. Please try again, or contact our team for help.',
+    'I couldn’t answer that question just now. Please try again or contact our team for help.',
     [
       { id: 'human', title: 'Talk to our team' },
       { id: 'menu', title: 'Main menu' },
@@ -276,10 +377,15 @@ return this.say(
       case 'mine': return this.myAppointments();
       case 'later': return this.say(text('No problem. Type *book* whenever you’re ready.'));
 
-      // ----- booking (in-chat steps; see flowSubmitted() for the WhatsApp Flow version)
-      case 'book': {
+      // ----- booking (in-chat steps; see flowSubmitted() for the WhatsApp Flow version
+
+    case 'book': {
         const svcId = b ? `${b}${c ? ':' + c : ''}` : undefined;
-        if (!svcId) return this.say(text('Which doctor would you like to see? Pick a speciality and tap *Book appointment* on a doctor.'), this.specialtyList());
+
+        if (!svcId) {
+          return this.say(this.specialtyList());
+        }
+
         return this.say(...(await this.bookingStart(svcId)));
       }
       case 'bd': { // bd:<svc>:<date>
@@ -378,6 +484,7 @@ return this.say(
   }
 
   specialtyList(): OutMsg {
+    console.log('DEBUG specialties:', JSON.stringify(this.c.specialties, null, 2));
     return list('Which speciality are you looking for?', 'Choose speciality',
       [{ title: 'Specialities', rows: this.c.specialties.slice(0, 10).map((s) => ({ id: `spec:${s.id}`, title: s.name, description: s.description.slice(0, 72) })) }]);
   }
@@ -405,7 +512,7 @@ return this.say(
       );
     }
 
-    this.say(
+    return this.say(
       text(intro ?? `Here are our *${sp.name}* doctors:`),
       ...docs.map((d) => this.doctorCard(d.id)),
       buttons('Not sure who to see? Our team can help you choose.', [
